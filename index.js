@@ -31,7 +31,7 @@ function mapStateToStorage(store, config) {
       debounce_timeout = setTimeout(() => {
         config.storage.setItem(
           key_prefix + config.key,
-          stringifyState(store.getState()),
+          stringifyState(store.getState(), config),
           err => err && reject(err)
         )
       }, config.debounce_interval)
@@ -39,7 +39,7 @@ function mapStateToStorage(store, config) {
       const state = store.getState()
       config.storage.setItem(
         key_prefix + config.key,
-        stringifyState(state),
+        stringifyState(state, config),
         err => (err ? reject(err) : resolve(state))
       )
     }
