@@ -1,4 +1,4 @@
-const key_prefix = 'persist:';
+const key_prefix = 'persist:'
 
 function _() {}
 let debounce_timeout
@@ -10,7 +10,7 @@ let debounce_timeout
  * @returns {Promise<any>}
  */
 function mapStateToStorage(store, config) {
-  const state = store.getState();
+  const state = store.getState()
 
   return new Promise((resolve, reject) => {
     const setter = () =>
@@ -18,18 +18,26 @@ function mapStateToStorage(store, config) {
         key_prefix + config.key,
         JSON.stringify(state),
         err => (err ? reject(err) : resolve(state))
-      );
+      )
 
     if (config.debounce_interval) {
-      resolve(state);
-      clearTimeout(debounce_timeout);
+      resolve(state)
+      clearTimeout(debounce_timeout)
       debounce_timeout = setTimeout(() => {
-        setter();
-      }, config.debounce_interval);
+        config.storage.setItem(
+          key_prefix + config.key,
+          JSON.stringify(state),
+          err => err && reject(err)
+        )
+      }, config.debounce_interval)
     } else {
-      setter();
+      config.storage.setItem(
+        key_prefix + config.key,
+        JSON.stringify(state),
+        err => (err ? reject(err) : resolve(state))
+      )
     }
-  });
+  })
 }
 
 /**
@@ -40,15 +48,15 @@ function mapStateToStorage(store, config) {
  */
 function mapStorageToState(state, config, cb = _) {
   config.storage.getItem(key_prefix + config.key, (err, value) => {
-    let _state = {};
+    let _state = {}
     if (err) {
-      cb(null, {});
+      cb(null, {})
     }
     try {
-      _state = JSON.parse(value);
+      _state = JSON.parse(value)
     } catch (err) {}
-    cb(null, Object.assign({}, state, _state));
-  });
+    cb(null, Object.assign({}, state, _state))
+  })
 }
 
 /**
@@ -56,49 +64,53 @@ function mapStorageToState(state, config, cb = _) {
  */
 class MemoryStorage {
   constructor() {
-    this.store = {};
+    this.store = {}
   }
   getItem(key, cb = _) {
-    setTimeout(() => cb(null, this.store[key]));
+    setTimeout(() => cb(null, this.store[key]))
   }
   setItem(key, item, cb = _) {
     setTimeout(() => {
-      cb(null, (this.store[key] = item) && item);
-    });
+      cb(null, (this.store[key] = item) && item)
+    })
   }
   removeItem(key, cb = _) {
-    const val = this.store[key];
-    setTimeout(() => cb(null, delete this.store[key] && val));
+    const val = this.store[key]
+    setTimeout(() => cb(null, delete this.store[key] && val))
   }
 }
 
 function persist(
-  config = { key: '[rc]', storage: new MemoryStorage(), debounce_interval: undefined },
+  config = {
+    key: '[rc]',
+    storage: new MemoryStorage(),
+    debounce_interval: undefined,
+  },
   cb = _
 ) {
   mapStorageToState({}, config, (err, state) => {
     if (err) {
       config.storage.removeItem(key_prefix + config.key, _err => {
-        cb(_err, state);
-      });
+        cb(_err, state)
+      })
     } else {
-      cb(err, state);
+      cb(err, state)
     }
-  });
+  })
 
   // return middleware
   return store => next => action => {
-    const r = next(action);
+    const r = next(action)
     if (r && typeof r.then === 'function') {
       return next(action).then(d => {
-        return mapStateToStorage(store, config).then(() => Promise.resolve(d));
-      });
+        return mapStateToStorage(store, config).then(() => Promise.resolve(d))
+      })
     } else {
-      return mapStateToStorage(store, config).then(() => Promise.resolve(r));
+      return mapStateToStorage(store, config).then(() => Promise.resolve(r))
     }
-  };
+  }
 }
 
-module.exports = persist;
-module.exports.default = persist;
-module.exports.MemoryStorage = MemoryStorage;
+module.exports = persist
+module.exports.default = persist
+module.exports.MemoryStorage = MemoryStorage
