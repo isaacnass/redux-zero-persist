@@ -3,6 +3,20 @@ const key_prefix = 'persist:'
 function _() {}
 let debounce_timeout
 
+function stringifyState(state, config) {
+  if (!config.ignore_keys || config.ignore_keys.length === 0) {
+    return JSON.stringify(state)
+  }
+
+  const ignorers = {}
+  config.ignore_keys.forEach(k => (ignorers[k] = undefined))
+
+  return JSON.stringify({
+    ...state,
+    ...ignorers,
+  })
+}
+
 /**
  * map state to storage
  * @param store
@@ -17,7 +31,7 @@ function mapStateToStorage(store, config) {
       debounce_timeout = setTimeout(() => {
         config.storage.setItem(
           key_prefix + config.key,
-          JSON.stringify(store.getState()),
+          stringifyState(store.getState()),
           err => err && reject(err)
         )
       }, config.debounce_interval)
@@ -25,7 +39,7 @@ function mapStateToStorage(store, config) {
       const state = store.getState()
       config.storage.setItem(
         key_prefix + config.key,
-        JSON.stringify(state),
+        stringifyState(state),
         err => (err ? reject(err) : resolve(state))
       )
     }
@@ -77,6 +91,7 @@ function persist(
     key: '[rc]',
     storage: new MemoryStorage(),
     debounce_interval: undefined,
+    ignore_keys: [],
   },
   cb = _
 ) {
