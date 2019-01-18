@@ -10,27 +10,19 @@ let debounce_timeout
  * @returns {Promise<any>}
  */
 function mapStateToStorage(store, config) {
-  const state = store.getState()
-
   return new Promise((resolve, reject) => {
-    const setter = () =>
-      config.storage.setItem(
-        key_prefix + config.key,
-        JSON.stringify(state),
-        err => (err ? reject(err) : resolve(state))
-      )
-
     if (config.debounce_interval) {
-      resolve(state)
+      resolve(store.getState())
       clearTimeout(debounce_timeout)
       debounce_timeout = setTimeout(() => {
         config.storage.setItem(
           key_prefix + config.key,
-          JSON.stringify(state),
+          JSON.stringify(store.getState()),
           err => err && reject(err)
         )
       }, config.debounce_interval)
     } else {
+      const state = store.getState()
       config.storage.setItem(
         key_prefix + config.key,
         JSON.stringify(state),
