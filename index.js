@@ -1,6 +1,7 @@
 const key_prefix = 'persist:';
 
 function _() {}
+let debounce_timeout
 
 /**
  * map state to storage
@@ -10,12 +11,24 @@ function _() {}
  */
 function mapStateToStorage(store, config) {
   const state = store.getState();
+
   return new Promise((resolve, reject) => {
-    config.storage.setItem(
-      key_prefix + config.key,
-      JSON.stringify(state),
-      err => (err ? reject(err) : resolve(state))
-    );
+    const setter = () =>
+      config.storage.setItem(
+        key_prefix + config.key,
+        JSON.stringify(state),
+        err => (err ? reject(err) : resolve(state))
+      );
+
+    if (config.debounce_interval) {
+      resolve(state);
+      clearTimeout(debounce_timeout);
+      debounce_timeout = setTimeout(() => {
+        setter();
+      }, config.debounce_interval);
+    } else {
+      setter();
+    }
   });
 }
 
@@ -60,7 +73,7 @@ class MemoryStorage {
 }
 
 function persist(
-  config = { key: '[rc]', storage: new MemoryStorage() },
+  config = { key: '[rc]', storage: new MemoryStorage(), debounce_interval: undefined },
   cb = _
 ) {
   mapStorageToState({}, config, (err, state) => {
